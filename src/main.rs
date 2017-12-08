@@ -20,66 +20,37 @@ use hyper::server::{Http, Request, Response, Service};
 use hyper_tls::HttpsConnector;
 
 use futures::Stream;
- use futures::Future;
+use futures::Future;
 
 fn main() {
     let mut sched = JobScheduler::new();
 
-    // sched.add(Job::new("1/10 * * * * *".parse().unwrap(), || {
-        create_request_object("nyan");
-    // }));
+    sched.add(Job::new("1/10 * * * * *".parse().unwrap(), || {
+        create_request_object("https://api.github.com/repos/rchaser53/vue-table-playground/commits");
+    }));
 
-    // loop {
-    //     sched.tick();
+    loop {
+        sched.tick();
 
-    //     std::thread::sleep(Duration::from_millis(500));
-    // }
+        std::thread::sleep(Duration::from_millis(500));
+    }
 }
 
 fn create_request_object(path: &'static str) {
-    // let mut core = Core::new().unwrap();
-    // let client = Client::new(&core.handle());
-
     let mut core = tokio_core::reactor::Core::new().unwrap();
     let handle = core.handle();
     let client = Client::configure()
                     .connector(HttpsConnector::new(4, &handle).unwrap())
                     .build(&handle);
 
+    let mut req = Request::new(Method::Get, path.parse().unwrap());
+    req.headers_mut().set(UserAgent::new("todo"));
 
-    // let uri = "https://api.github.com/repos/rchaser53/vue-table-playground/commits".parse().unwrap();
-    let uri = "https://connpass.com".parse().unwrap();
-
-    let f = client.get(uri).map_err(|_err| ()).and_then(|resp| {
+    let work = client.request(req).map_err(|_err| ()).and_then(|resp| {
         resp.body().concat2().map_err(|_err| ()).map(|chunk| {
             let v = chunk.to_vec();
-            let hoge = String::from_utf8_lossy(&v).to_string();
-            println!("{}", hoge);
-            hoge
+            println!("{}", String::from_utf8_lossy(&v).to_string());
         })
     });
-    core.run(f);
-
-
-    
-
-    // let hoe = res.body().then(|result| {
-    //     match result {
-    //         Ok(e) => {
-    //             Ok(e)
-    //         },
-    //         Err(e) => Err(e)
-    //     }
-    // }).concat2();
-
-    // .map(|_res| {
-    //     println!("Response: {:?}", _res);
-    // });
-
-
-
-
-    // let work = client.get(uri).map(|res| {
-    //     println!("Response: {}", res.status());
-    // });
+    core.run(work);
 }

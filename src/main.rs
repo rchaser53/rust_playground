@@ -1,15 +1,15 @@
 use std::mem;
 
-fn main() {
-    let a: [i16; 3] = [1 , 2, 3];
-    hoge(&a);
+fn main() {}
 
-    for i in &a[1..2] {
-        println!("{}", i);
+fn mut_and_dereference() {
+    let mut a: [i16; 3] = [1 , 2, 3];
+    for i in &mut a {
+        *i += 5;
     }
-
+    println!("{:?}", a);
 }
 
-fn hoge(a: &[i16]) -> [i16; 2] {
-    [a[0], a[2]]
-}
+// fn hoge(a: &[i16]) -> [i16; 2] {
+//     [a[0], a[2]]
+// }

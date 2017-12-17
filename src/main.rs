@@ -1,5 +1,17 @@
+// #[derive(Debug, PartialEq)]
+// struct Hoge {}
+
 fn main() {
+let tempHogeA: Vec<i16> = Vec::new();
+let tempHogeB: Vec<i16> = tempHogeA;
+assert_eq!(tempHogeA, tempHogeB);
 }
+
+// fn main() {
+//     let tempArrayA: [i16; 3] = [1, 2, 3];
+//     let tempArrayB: [i16; 3] = tempArrayA;
+//     assert_eq!(tempArrayA, tempArrayB);
+// }
 
 fn return_string() -> String {
     "abc".to_string()

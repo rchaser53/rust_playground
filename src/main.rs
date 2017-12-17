@@ -1,6 +1,12 @@
-use std::mem;
-
 fn main() {
+}
+
+fn return_string() -> String {
+    "abc".to_string()
+}
+
+fn return_static_str() -> &'static str {
+    "abc"
 }
 
 // fn main() {

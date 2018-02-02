@@ -6,7 +6,7 @@ extern crate serde_json;
 use hyper::{Client, Method, StatusCode};
 use tokio_core::reactor::Core;
 
-use hyper::header::{ContentLength, UserAgent};
+use hyper::header::{UserAgent};
 use hyper::server::{Http, Request, Response, Service};
 
 use futures::future::Future;
@@ -23,7 +23,7 @@ impl Service for GitService {
         let mut core = Core::new().unwrap();
         let handle = core.handle();
         let client = Client::configure()
-            .keep_alive(true)
+            // .keep_alive(true)
             .build(&handle);
 
         match (req.method(), req.path()) {
@@ -31,7 +31,8 @@ impl Service for GitService {
                 response.set_body("nya-n");
             },
             (&Method::Get, "/git") => {
-                let mut req = Request::new(Method::Get, "https://api.github.com/repos/rchaser53/vue-table-playground/commits".parse().unwrap());
+                let uri: hyper::Uri = "https://api.github.com/repos/rchaser53/vue-table-playground/commits".parse().unwrap();
+                let mut req = Request::new(Method::Get, uri);
                 req.headers_mut().set(UserAgent::new("todo"));
                 let work = client.request(req);
                 let _res = core.run(work).unwrap();

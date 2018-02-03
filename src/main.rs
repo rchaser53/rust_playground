@@ -1,21 +1,17 @@
-extern crate hyper;
 extern crate futures;
+extern crate native_tls;
 extern crate tokio_core;
-extern crate serde_json;
-extern crate hyper_native_tls;
+extern crate tokio_io;
+extern crate tokio_tls;
 
 use std::io;
-use std::io::Read;
-use hyper::{Client};
+use std::net::ToSocketAddrs;
+
+use futures::Future;
+use native_tls::TlsConnector;
+use tokio_core::net::TcpStream;
 use tokio_core::reactor::Core;
-
-use hyper::net::HttpsConnector;
-use hyper_native_tls::NativeTlsClient;
-
-use hyper::header::{UserAgent};
-use hyper::server::{Request, Response};
-
-use futures::future::Future;
+use tokio_tls::TlsConnectorExt;
 
 // pub struct GitService;
 // impl Service for GitService {
@@ -67,20 +63,32 @@ use futures::future::Future;
 // }
 
 pub fn main() {
-    let ssl = NativeTlsClient::new().unwrap();
-    let connector = HttpsConnector::new(ssl);
-    let client = Client::with_connector(connector);
+    let mut core = Core::new().unwrap();
+    let handle = core.handle();
+    let addr = "www.rust-lang.org:443".to_socket_addrs().unwrap().next().unwrap();
 
-    let mut resp = client.get("https://stackoverflow.com/questions/38148163/displaying-the-response-body-with-hyper-only-shows-the-size-of-the-body").send().unwrap();
-    // let mut resp = client.get("https://google.com").send().unwrap();
+    let cx = TlsConnector::builder().unwrap().build().unwrap();
+    let socket = TcpStream::connect(&addr, &handle);
 
-    let mut s = String::new();
-    resp.read_to_string(&mut s).unwrap();
-    println!("{}", s);
+    let tls_handshake = socket.and_then(|socket| {
+        let tls = cx.connect_async("www.rust-lang.org", socket);
+        tls.map_err(|e| {
+            io::Error::new(io::ErrorKind::Other, e)
+        })
+    });
+    let request = tls_handshake.and_then(|socket| {
+        tokio_io::io::write_all(socket, "\
+            GET / HTTP/1.0\r\n\
+            Host: www.rust-lang.org\r\n\
+            \r\n\
+        ".as_bytes())
+    });
+    let response = request.and_then(|(socket, _request)| {
+        tokio_io::io::read_to_end(socket, Vec::new())
+    });
 
-    let mut body = vec![];
-    resp.read_to_end(&mut body).unwrap();
-    println!("{}", std::str::from_utf8(&body).map_err(|err| err.to_string()).unwrap());
+    let (_socket, data) = core.run(response).unwrap();
+    println!("{}", String::from_utf8_lossy(&data));
 
 }
 

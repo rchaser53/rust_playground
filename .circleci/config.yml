@@ -1,0 +1,10 @@
+version: 2
+jobs:
+  build:
+    machine: true
+    working_directory: ~/workspace
+
+    steps:
+      - checkout
+
+      - run: cat /etc/os-release

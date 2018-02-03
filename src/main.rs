@@ -67,17 +67,28 @@ use futures::future::Future;
 // }
 
 pub fn main() {
-    // let addr = "127.0.0.1:3000".parse().unwrap();
-    // let server = Http::new().bind(&addr, || Ok(GitService)).unwrap();
-    // server.run().unwrap();
-
-
     let ssl = NativeTlsClient::new().unwrap();
     let connector = HttpsConnector::new(ssl);
     let client = Client::with_connector(connector);
 
-    let mut resp = client.get("https://google.com").send().unwrap();
-    assert!(resp.status.is_success());
+    let mut resp = client.get("https://stackoverflow.com/questions/38148163/displaying-the-response-body-with-hyper-only-shows-the-size-of-the-body").send().unwrap();
+    // let mut resp = client.get("https://google.com").send().unwrap();
+
+    let mut s = String::new();
+    resp.read_to_string(&mut s).unwrap();
+    println!("{}", s);
+
     let mut body = vec![];
     resp.read_to_end(&mut body).unwrap();
+    println!("{}", std::str::from_utf8(&body).map_err(|err| err.to_string()).unwrap());
+
 }
+
+// assert!(resp.status.is_success());
+
+
+  // let f = File::open("input.txt").unwrap();
+  // let mut buf_reader = BufReader::new(&f);
+  // let mut buffer = Vec::new();
+  // buf_reader.read_to_end(&mut buffer).unwrap();
+  // println!("{}", std::str::from_utf8(&buffer).unwrap());

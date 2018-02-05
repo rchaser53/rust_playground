@@ -6,6 +6,7 @@ extern crate tokio_tls;
 
 use std::io;
 use std::net::ToSocketAddrs;
+use std::borrow::Cow;
 
 use futures::Future;
 use native_tls::TlsConnector;
@@ -62,10 +63,10 @@ use tokio_tls::TlsConnectorExt;
 //     }
 // }
 
-pub fn main() {
+pub fn nyan<'a>(address: &'a str) -> Vec<u8> {
     let mut core = Core::new().unwrap();
     let handle = core.handle();
-    let addr = "www.rust-lang.org:443".to_socket_addrs().unwrap().next().unwrap();
+    let addr = address.to_socket_addrs().unwrap().next().unwrap();
 
     let cx = TlsConnector::builder().unwrap().build().unwrap();
     let socket = TcpStream::connect(&addr, &handle);
@@ -88,8 +89,12 @@ pub fn main() {
     });
 
     let (_socket, data) = core.run(response).unwrap();
-    println!("{}", String::from_utf8_lossy(&data));
+    return data;
+}
 
+pub fn main() {
+  
+  println!("{}", String::from_utf8_lossy(&nyan("www.rust-lang.org:443")));
 }
 
 // assert!(resp.status.is_success());

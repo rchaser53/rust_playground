@@ -8,6 +8,11 @@ use std::io;
 use std::net::ToSocketAddrs;
 use std::borrow::Cow;
 
+use std::io::prelude::*;
+use std::fs::File;
+use std::io::Read;
+
+
 use futures::Future;
 use native_tls::TlsConnector;
 use tokio_core::net::TcpStream;
@@ -93,8 +98,23 @@ pub fn nyan<'a>(address: &'a str) -> Vec<u8> {
 }
 
 pub fn main() {
-  
-  println!("{}", String::from_utf8_lossy(&nyan("www.rust-lang.org:443")));
+  let mut f = File::open("input.txt").unwrap();
+  let mut buffer = String::new();
+  f.read_to_string(&mut buffer).unwrap();
+
+  println!("{}", buffer);
+
+  // let five = String::from(buffer);
+  // println!(stringify!(buffer));
+
+  // println!("{}", buffer.iter().fold(String::new(), |acc, &arg| acc + arg));
+
+  // println!("{:?}", buffer.to_string());
+
+  // let mut buffer = File::create("foo.txt").unwrap();
+  // buffer.write_all(b"some bytes").unwrap();
+
+  // File.
 }
 
 // assert!(resp.status.is_success());

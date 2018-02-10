@@ -10,8 +10,7 @@ use std::borrow::Cow;
 
 use std::io::prelude::*;
 use std::fs::File;
-use std::io::Read;
-
+use std::io::{Read, BufReader, BufWriter};
 
 use futures::Future;
 use native_tls::TlsConnector;
@@ -68,41 +67,22 @@ use tokio_tls::TlsConnectorExt;
 //     }
 // }
 
-pub fn nyan<'a>(address: &'a str) -> Vec<u8> {
-    let mut core = Core::new().unwrap();
-    let handle = core.handle();
-    let addr = address.to_socket_addrs().unwrap().next().unwrap();
-
-    let cx = TlsConnector::builder().unwrap().build().unwrap();
-    let socket = TcpStream::connect(&addr, &handle);
-
-    let tls_handshake = socket.and_then(|socket| {
-        let tls = cx.connect_async("www.rust-lang.org", socket);
-        tls.map_err(|e| {
-            io::Error::new(io::ErrorKind::Other, e)
-        })
-    });
-    let request = tls_handshake.and_then(|socket| {
-        tokio_io::io::write_all(socket, "\
-            GET / HTTP/1.0\r\n\
-            Host: www.rust-lang.org\r\n\
-            \r\n\
-        ".as_bytes())
-    });
-    let response = request.and_then(|(socket, _request)| {
-        tokio_io::io::read_to_end(socket, Vec::new())
-    });
-
-    let (_socket, data) = core.run(response).unwrap();
-    return data;
-}
-
 pub fn main() {
-  let mut f = File::open("input.txt").unwrap();
-  let mut buffer = String::new();
-  f.read_to_string(&mut buffer).unwrap();
+  // buffer.write(b"some bytes").unwrap();
 
-  println!("{}", buffer);
+  // stream.
+  // buffer.flush().unwrap();
+  // let mut buffer = String::new();
+  // f.read_to_string(&mut buffer).unwrap();
+
+  // println!("{}", buffer);
+
+  // buffer = buffer + "hoge";
+
+  // println!("{}", buffer);
+
+  // let mut buffer = File::create("aaa.txt").unwrap();
+
 
   // let five = String::from(buffer);
   // println!(stringify!(buffer));
@@ -118,7 +98,6 @@ pub fn main() {
 }
 
 // assert!(resp.status.is_success());
-
 
   // let f = File::open("input.txt").unwrap();
   // let mut buf_reader = BufReader::new(&f);

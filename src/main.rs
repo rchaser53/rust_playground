@@ -3,7 +3,6 @@ extern crate native_tls;
 extern crate tokio_core;
 extern crate tokio_io;
 extern crate tokio_tls;
-extern crate future_by_example;
 
 use std::net::ToSocketAddrs;
 use std::borrow::Cow;
@@ -13,7 +12,6 @@ use std::fs::File;
 use std::io::{Read, BufReader, BufWriter};
 
 use futures::Future;
-use future_by_example::new_example_future;
 use futures::future::FutureResult;
 
 // use native_tls::TlsConnector;
@@ -24,15 +22,23 @@ use futures::future::FutureResult;
 use std::error::Error;
 use std::{thread, time};
 
-fn wait_return_future() -> FutureResult<i16, Box<Error>> {
-  let three_thousand = time::Duration::from_millis(3000);
+fn wait_return_future(a: i32) -> FutureResult<i32, Box<Error>> {
+  let three_thousand = time::Duration::from_millis(1000);
   let now = time::Instant::now();
   thread::sleep(three_thousand);
 
-  futures::future::ok(28)
+  futures::future::ok(a)
+}
+
+fn add<'a, A, B>(a: A, b: B) -> Box<Future<Item=i32, Error=A::Error> + 'a>
+    where A: Future<Item=i32> + 'a,
+          B: Future<Item=i32, Error=A::Error> + 'a,
+{
+    Box::new(a.join(b).map(|(a, b)| a + b))
 }
 
 fn main() {
-  let future = wait_return_future();
-  println!("{}", future.wait().unwrap());
+  let futureA = wait_return_future(1);
+  let futureB = wait_return_future(2);
+  println!("{}", add(futureA, futureB).wait().unwrap());
 }

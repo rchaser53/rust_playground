@@ -1,4 +1,3 @@
-
 pub fn http_request<'a>(address: &'a str) -> Vec<u8> {
     let mut core = Core::new().unwrap();
     let handle = core.handle();

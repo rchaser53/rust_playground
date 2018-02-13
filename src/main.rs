@@ -1,29 +1,47 @@
 use std::error::Error;
-use std::process::exit;
-use std::num::ParseIntError;
+
+pub type Poll<T, E> = Result<Async<T>, E>;
+
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub enum Async<T> {
+    Ready(T),
+    NotReady,
+}
+
+impl<T> Async<T> {
+    pub fn map<F, U>(self, f: F) -> Async<U>
+        where F: FnOnce(T) -> U
+    {
+        match self {
+            Async::Ready(t) => Async::Ready(f(t)),
+            Async::NotReady => Async::NotReady,
+        }
+    }
+
+    pub fn is_ready(&self) -> bool {
+        match *self {
+            Async::Ready(_) => true,
+            Async::NotReady => false,
+        }
+    }
+
+    pub fn is_not_ready(&self) -> bool {
+        !self.is_ready()
+    }
+}
+
+impl<T> From<T> for Async<T> {
+    fn from(t: T) -> Async<T> {
+        Async::Ready(t)
+    }
+}
 
 fn nyan () -> Poll<i16, Box<Error>> {
   Ok(Async::Ready(11))
 }
 
-#[derive(Debug)]
-pub enum Aaa<T> {
-  a(T),
-  b
-}
-
-fn getAaa <T>(nyan: Aaa<T>) -> Option<T> {
-  match nyan {
-    Aaa::a(t) => Some(t),
-    Aaa::b => {
-      None
-    }
-  }
-}
-
-fn main () {
-  // println!("{:?}", nyan().unwrap());
-  println!("{}", getAaa(Aaa::a(2)).unwrap());
-  // println!("{}", getAaa::<i16>(Aaa::b).expect("nya-n"));
-  println!("{:?}", getAaa::<i16>(Aaa::b).ok_or("nyanyanya"));
+fn main() {
+  nyan().unwrap().map(|a| {
+    println!("{}", a);
+  });
 }

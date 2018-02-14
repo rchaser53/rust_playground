@@ -1,4 +1,9 @@
 use std::error::Error;
+// use core::result;
+// use {Future, Poll, Async};
+use std::{thread, time};
+use std::sync::{Arc, mpsc};
+use std::sync::atomic::{AtomicUsize, Ordering, ATOMIC_USIZE_INIT};
 
 pub type Poll<T, E> = Result<Async<T>, E>;
 
@@ -40,8 +45,40 @@ fn nyan () -> Poll<i16, Box<Error>> {
   Ok(Async::Ready(11))
 }
 
+struct Client {
+  nyan: i32
+}
+
+impl Client {
+  pub fn fetch(self) -> i32 {
+    32
+  }
+}
+
+struct Runner {
+    client: Arc<Client>
+}
+
+impl Runner {
+    fn run(&self, data: Vec<i32>) {
+        let (tx, rx) = mpsc::channel();
+        for &x in data.iter() {
+            let client = self.client.clone();
+            let tx = tx.clone();
+            thread::spawn(move || {
+                // client.fetch();
+                tx.send(2);
+            });
+        }
+
+        for i in 0..data.len() {
+            println!("{:?}", rx.recv());
+        }
+    }
+}
+
 fn main() {
-  nyan().unwrap().map(|a| {
-    println!("{}", a);
-  });
+  let runnya = Runner{
+    client: Arc::new(Client{ nyan: 13 })
+  };
 }

@@ -50,8 +50,8 @@ struct Client {
 }
 
 impl Client {
-  pub fn fetch(self) -> i32 {
-    32
+  pub fn hoge(&self, a: i32) -> i32 {
+    return self.nyan + a
   }
 }
 
@@ -63,11 +63,11 @@ impl Runner {
     fn run(&self, data: Vec<i32>) {
         let (tx, rx) = mpsc::channel();
         for &x in data.iter() {
-            let client = self.client.clone();
+            let mut client = self.client.clone();
             let tx = tx.clone();
-            thread::spawn(move || {
-                // client.fetch();
-                tx.send(2);
+
+            thread::spawn(move || { 
+                tx.send(client.hoge(x));
             });
         }
 
@@ -81,4 +81,6 @@ fn main() {
   let runnya = Runner{
     client: Arc::new(Client{ nyan: 13 })
   };
+
+  runnya.run(vec![1, 2, 3])
 }

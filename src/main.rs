@@ -77,10 +77,31 @@ impl Runner {
     }
 }
 
-fn main() {
-  let runnya = Runner{
-    client: Arc::new(Client{ nyan: 13 })
-  };
+use std::cell::RefCell;
+// use std::thread;
 
-  runnya.run(vec![1, 2, 3])
+
+
+// we retain our original value of 2 despite the child thread
+fn main() {
+  thread_local!(static FOO: RefCell<u32> = RefCell::new(1));
+
+  FOO.with(|f| {
+      assert_eq!(*f.borrow(), 1);
+      *f.borrow_mut() = 2;
+  });
+
+  // each thread starts out with the initial value of 1
+  thread::spawn(move|| {
+      FOO.with(|f| {
+          assert_eq!(*f.borrow(), 1);
+          *f.borrow_mut() = 3;
+
+          println!("{}", f.borrow())    // 3
+      });
+  });
+
+  FOO.with(|f| {
+    assert_eq!(*f.borrow(), 2);
+  });
 }

@@ -1,3 +1,4 @@
+#![feature(get_type_id)]
 use std::error::Error;
 // use core::result;
 // use {Future, Poll, Async};
@@ -123,10 +124,15 @@ use std::cell::RefCell;
 //   println!(2);
 // }
 
+
 use std::any::{Any, TypeId};
 
-fn is_string<T: ?Sized + Any>(_s: &T) -> bool {
-    TypeId::of::<String>() == TypeId::of::<T>()
+fn is_string(s: &Any) -> bool {
+    TypeId::of::<String>() == s.get_type_id()
+}
+
+fn is_i32(s: &Any) -> bool {
+    TypeId::of::<i32>() == s.get_type_id()
 }
 
 fn main() {
@@ -135,9 +141,14 @@ fn main() {
     // convert_vec_u8("hello".to_string())
   //   convert_vec_u8("hello")
   // );
+  // let hoge = 21;
+  let hoge = 21;
+  println!(
+    "{}", is_i32(&hoge)
+  );
 
-  let mut abc = Nyan{hoge: "aa"};
-  abc.poll_stream_notify(&Nyantwo{ hoge: 11 });
+  // let mut abc = Nyan{hoge: "aa"};
+  // abc.poll_stream_notify(&Nyantwo{ hoge: 11 });
 }
 
   //  let bytes = b"hello".to_vec();

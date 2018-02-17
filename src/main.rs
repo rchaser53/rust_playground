@@ -2,7 +2,7 @@ use std::error::Error;
 // use core::result;
 // use {Future, Poll, Async};
 use std::{thread, time};
-use std::sync::{Arc, mpsc};
+use std::sync::{Arc, Mutex, Condvar, mpsc};
 use std::sync::atomic::{AtomicUsize, Ordering, ATOMIC_USIZE_INIT};
 
 pub type Poll<T, E> = Result<Async<T>, E>;
@@ -78,30 +78,46 @@ impl Runner {
 }
 
 use std::cell::RefCell;
-// use std::thread;
 
+// fn main() {
+//   thread_local!(static FOO: RefCell<u32> = RefCell::new(1));
 
+//   FOO.with(|f| {
+//       assert_eq!(*f.borrow(), 1);
+//       *f.borrow_mut() = 2;
+//   });
 
-// we retain our original value of 2 despite the child thread
+//   thread::spawn(move|| {
+//       FOO.with(|f| {
+//           assert_eq!(*f.borrow(), 1);
+//           *f.borrow_mut() = 3;
+
+//           println!("{}", f.borrow())    // 3
+//       });
+//   });
+
+//   FOO.with(|f| {
+//     assert_eq!(*f.borrow(), 2);
+//   });
+// }
+
 fn main() {
-  thread_local!(static FOO: RefCell<u32> = RefCell::new(1));
+  let pair = Arc::new((Mutex::new(false), Condvar::new()));
+  let pair2 = pair.clone();
 
-  FOO.with(|f| {
-      assert_eq!(*f.borrow(), 1);
-      *f.borrow_mut() = 2;
-  });
-
-  // each thread starts out with the initial value of 1
   thread::spawn(move|| {
-      FOO.with(|f| {
-          assert_eq!(*f.borrow(), 1);
-          *f.borrow_mut() = 3;
+      let &(ref lock, ref cvar) = &*pair2;
+      let mut started = lock.lock().unwrap();
+      *started = true;
 
-          println!("{}", f.borrow())    // 3
-      });
+      // cvar.notify_one();
   });
 
-  FOO.with(|f| {
-    assert_eq!(*f.borrow(), 2);
-  });
+  let &(ref lock, ref cvar) = &*pair;
+  let mut started = lock.lock().unwrap();
+  while !*started {
+    println!(1);
+    started = cvar.wait(started).unwrap();
+  }
+  println!(2);
 }

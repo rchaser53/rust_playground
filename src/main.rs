@@ -131,8 +131,8 @@ fn is_string(s: &Any) -> bool {
     TypeId::of::<String>() == s.get_type_id()
 }
 
-fn is_i32(s: &Any) -> bool {
-    TypeId::of::<i32>() == s.get_type_id()
+fn is_A<T: 'static>(s: &Any) -> bool {
+    TypeId::of::<T>() == s.get_type_id()
 }
 
 fn main() {
@@ -144,7 +144,7 @@ fn main() {
   // let hoge = 21;
   let hoge = 21;
   println!(
-    "{}", is_i32(&hoge)
+    "{}", is_A::<i32>(&hoge)
   );
 
   // let mut abc = Nyan{hoge: "aa"};

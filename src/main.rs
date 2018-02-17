@@ -2,7 +2,7 @@ use std::error::Error;
 // use core::result;
 // use {Future, Poll, Async};
 use std::{thread, time};
-use std::sync::{Arc, Mutex, Condvar, mpsc};
+use std::sync::{mpsc, Arc, Condvar, Mutex};
 use std::sync::atomic::{AtomicUsize, Ordering, ATOMIC_USIZE_INIT};
 
 pub type Poll<T, E> = Result<Async<T>, E>;
@@ -15,7 +15,8 @@ pub enum Async<T> {
 
 impl<T> Async<T> {
     pub fn map<F, U>(self, f: F) -> Async<U>
-        where F: FnOnce(T) -> U
+    where
+        F: FnOnce(T) -> U,
     {
         match self {
             Async::Ready(t) => Async::Ready(f(t)),
@@ -41,22 +42,22 @@ impl<T> From<T> for Async<T> {
     }
 }
 
-fn nyan () -> Poll<i16, Box<Error>> {
-  Ok(Async::Ready(11))
+fn nyan() -> Poll<i16, Box<Error>> {
+    Ok(Async::Ready(11))
 }
 
 struct Client {
-  nyan: i32
+    nyan: i32,
 }
 
 impl Client {
-  pub fn hoge(&self, a: i32) -> i32 {
-    return self.nyan + a
-  }
+    pub fn hoge(&self, a: i32) -> i32 {
+        return self.nyan + a;
+    }
 }
 
 struct Runner {
-    client: Arc<Client>
+    client: Arc<Client>,
 }
 
 impl Runner {
@@ -66,7 +67,7 @@ impl Runner {
             let mut client = self.client.clone();
             let tx = tx.clone();
 
-            thread::spawn(move || { 
+            thread::spawn(move || {
                 tx.send(client.hoge(x));
             });
         }
@@ -101,23 +102,65 @@ use std::cell::RefCell;
 //   });
 // }
 
+// fn main() {
+//   let pair = Arc::new((Mutex::new(false), Condvar::new()));
+//   let pair2 = pair.clone();
+
+//   thread::spawn(move|| {
+//       let &(ref lock, ref cvar) = &*pair2;
+//       let mut started = lock.lock().unwrap();
+//       *started = true;
+
+//       // cvar.notify_one();
+//   });
+
+//   let &(ref lock, ref cvar) = &*pair;
+//   let mut started = lock.lock().unwrap();
+//   while !*started {
+//     println!(1);
+//     started = cvar.wait(started).unwrap();
+//   }
+//   println!(2);
+// }
+
+use std::any::{Any, TypeId};
+
+fn is_string<T: ?Sized + Any>(_s: &T) -> bool {
+    TypeId::of::<String>() == TypeId::of::<T>()
+}
+
 fn main() {
-  let pair = Arc::new((Mutex::new(false), Condvar::new()));
-  let pair2 = pair.clone();
+  // println!(
+    // "{:?}",
+    // convert_vec_u8("hello".to_string())
+  //   convert_vec_u8("hello")
+  // );
 
-  thread::spawn(move|| {
-      let &(ref lock, ref cvar) = &*pair2;
-      let mut started = lock.lock().unwrap();
-      *started = true;
+  let mut abc = Nyan{hoge: "aa"};
+  abc.poll_stream_notify(&Nyantwo{ hoge: 11 });
+}
 
-      // cvar.notify_one();
-  });
+  //  let bytes = b"hello".to_vec();
+fn convert_vec_u8<T: Into<Vec<u8>>>(s: T) -> Vec<u8> {
+   s.into()
+}
 
-  let &(ref lock, ref cvar) = &*pair;
-  let mut started = lock.lock().unwrap();
-  while !*started {
-    println!(1);
-    started = cvar.wait(started).unwrap();
+pub struct Nyan<T> {
+  hoge : T,
+}
+
+#[derive(Clone)]
+pub struct Nyantwo {
+  hoge: i16
+}
+
+// impl <T: ?Sized>Nyan<T> {
+impl <T>Nyan<T> {
+  pub fn poll_stream_notify<N>(&mut self,
+                                notify: &N)
+                                -> Nyantwo
+      where N: Clone + Into<Nyantwo>
+  {
+      notify.clone().into()
   }
-  println!(2);
 }

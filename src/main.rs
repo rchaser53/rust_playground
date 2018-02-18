@@ -20,30 +20,37 @@ fn main() {
     let lock = Arc::new(AtomicBool::new(true)); // value answers "am I locked?"
 
     let data = vec![1,2,3];
-    let (tx, rx) = mpsc::channel::<i16>();
+    let (tx, rx) = mpsc::channel::<()>();
     for &x in data.iter() {
       let tx = tx.clone();
-
+      let lock_clone = lock.clone();
       thread::spawn(move || {
-        thread::sleep(Duration::from_millis(rand::thread_rng().gen_range(100, 500)));
-        println!("{}", x);
-        return tx.send(1);
+        let tempVal = rand::thread_rng().gen_range(100, 500);
+
+        // thread::sleep(Duration::from_millis(tempVal));
+        // lock_clone.fetch_and(false, Ordering::SeqCst);
+        if (tempVal % 2 == 0) {
+          println!("true");
+          lock_clone.store(true, Ordering::Relaxed);
+          // lock_clone.fetch_and(true, Ordering::SeqCst);
+          return tx.send(());
+        }
+        lock_clone.store(false, Ordering::Relaxed);
+        println!("false");
+        return tx.send(());
       });
     }
 
-    for i in 0..data.len() {
-      let _ = rx.recv().unwrap();
-    }
+    // thread::sleep(Duration::from_millis(50));
 
-    lock.fetch_and(false, Ordering::SeqCst);
-    while lock.compare_and_swap(false, true, Ordering::Acquire) {
-    // while lock.compare_and_swap(false, true, Ordering::Relaxed) {
-      rx.recv().unwrap();
+    while lock.load(Ordering::Acquire) {
+    // while lock.load(Ordering::Relaxed) {
       println!("aaa");
+      rx.recv().unwrap();
+      // lock.fetch_and(rx.recv().unwrap(), Ordering::Relaxed);
     }
 
 
-    // aa.wait();
     // broke out of the loop, so we successfully acquired the lock!
 
     // ... scary data accesses ...

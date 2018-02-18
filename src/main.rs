@@ -1,68 +1,53 @@
-#![feature(get_type_id)]
-use std::error::Error;
+extern crate futures;
+extern crate rand;
+
+
+// #![feature(get_type_id)]
+
 // use core::result;
-// use {Future, Poll, Async};
+// use futures::{Future};
+// use std::cell::RefCell;
+// use std::any::{Any, TypeId};
+use rand::Rng;
+use std::error::Error;
+use futures::future::{FutureResult, ok};
 use std::{thread, time};
 use std::sync::{mpsc, Arc, Condvar, Mutex};
-use std::sync::atomic::{AtomicUsize, Ordering, ATOMIC_USIZE_INIT};
-use std::cell::RefCell;
-use std::any::{Any, TypeId};
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering, ATOMIC_USIZE_INIT};
+use std::time::Duration;
 
-// fn main() {
-//   let pair = Arc::new((Mutex::new(false), Condvar::new()));
-//   let pair2 = pair.clone();
+fn main() {
+    let lock = Arc::new(AtomicBool::new(true)); // value answers "am I locked?"
 
-//   thread::spawn(move|| {
-//       let &(ref lock, ref cvar) = &*pair2;
-//       let mut started = lock.lock().unwrap();
-//       *started = true;
+    let data = vec![1,2,3];
+    let (tx, rx) = mpsc::channel::<i16>();
+    for &x in data.iter() {
+      let tx = tx.clone();
 
-//       // cvar.notify_one();
-//   });
+      thread::spawn(move || {
+        thread::sleep(Duration::from_millis(rand::thread_rng().gen_range(100, 500)));
+        println!("{}", x);
+        return tx.send(1);
+      });
+    }
 
-//   let &(ref lock, ref cvar) = &*pair;
-//   let mut started = lock.lock().unwrap();
-//   while !*started {
-//     println!(1);
-//     started = cvar.wait(started).unwrap();
-//   }
-//   println!(2);
-// }
+    for i in 0..data.len() {
+      let _ = rx.recv().unwrap();
+    }
+
+    lock.fetch_and(false, Ordering::SeqCst);
+    while lock.compare_and_swap(false, true, Ordering::Acquire) {
+    // while lock.compare_and_swap(false, true, Ordering::Relaxed) {
+      rx.recv().unwrap();
+      println!("aaa");
+    }
 
 
-// fn main() {
-  // println!(
-    // "{:?}",
-    // convert_vec_u8("hello".to_string())
-  //   convert_vec_u8("hello")
-  // );
-  // let hoge = 21;
+    // aa.wait();
+    // broke out of the loop, so we successfully acquired the lock!
 
-  // let mut abc = Nyan{hoge: "aa"};
-  // abc.poll_stream_notify(&Nyantwo{ hoge: 11 });
-// }
+    // ... scary data accesses ...
 
-  //  let bytes = b"hello".to_vec();
-fn convert_vec_u8<T: Into<Vec<u8>>>(s: T) -> Vec<u8> {
-   s.into()
-}
-
-pub struct Nyan<T> {
-  hoge : T,
-}
-
-#[derive(Clone)]
-pub struct Nyantwo {
-  hoge: i16
-}
-
-// impl <T: ?Sized>Nyan<T> {
-impl <T>Nyan<T> {
-  pub fn poll_stream_notify<N>(&mut self,
-                                notify: &N)
-                                -> Nyantwo
-      where N: Clone + Into<Nyantwo>
-  {
-      notify.clone().into()
-  }
+    // ok we're done, release the lock
+    lock.store(false, Ordering::Release);
 }

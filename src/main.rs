@@ -1,6 +1,6 @@
+#![feature(duration_extras)]
 extern crate futures;
 extern crate rand;
-
 
 // #![feature(get_type_id)]
 
@@ -9,52 +9,42 @@ extern crate rand;
 // use std::cell::RefCell;
 // use std::any::{Any, TypeId};
 use rand::Rng;
-use std::error::Error;
-use futures::future::{FutureResult, ok};
+// use std::error::Error;
+// use futures::future::{FutureResult, ok};
 use std::{thread, time};
 use std::sync::{mpsc, Arc, Condvar, Mutex};
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering, ATOMIC_USIZE_INIT};
 use std::time::Duration;
 
 fn main() {
-    let lock = Arc::new(AtomicBool::new(true)); // value answers "am I locked?"
+    let a = Arc::new(AtomicUsize::new(0));
+    let a_clone = a.clone();
 
-    let data = vec![1,2,3];
-    let (tx, rx) = mpsc::channel::<()>();
-    for &x in data.iter() {
-      let tx = tx.clone();
-      let lock_clone = lock.clone();
-      thread::spawn(move || {
-        let tempVal = rand::thread_rng().gen_range(100, 500);
+    let b = Arc::new(AtomicUsize::new(0));
+    let b_clone = b.clone();
 
-        // thread::sleep(Duration::from_millis(tempVal));
-        // lock_clone.fetch_and(false, Ordering::SeqCst);
-        if (tempVal % 2 == 0) {
-          println!("true");
-          lock_clone.store(true, Ordering::Relaxed);
-          // lock_clone.fetch_and(true, Ordering::SeqCst);
-          return tx.send(());
-        }
-        lock_clone.store(false, Ordering::Relaxed);
-        println!("false");
-        return tx.send(());
-      });
-    }
+    let c = Arc::new(AtomicUsize::new(0));
+    let c_clone = c.clone();
 
-    // thread::sleep(Duration::from_millis(50));
+    let d = Arc::new(AtomicUsize::new(0));
+    let d_clone = d.clone();
 
-    while lock.load(Ordering::Acquire) {
-    // while lock.load(Ordering::Relaxed) {
-      println!("aaa");
-      rx.recv().unwrap();
-      // lock.fetch_and(rx.recv().unwrap(), Ordering::Relaxed);
-    }
+    thread::spawn(move || {
+      // thread::sleep(Duration::from_nanos(1));
+      
+      // a_clone.store(1, Ordering::Relaxed);
+      // c.store(b.load(Ordering::Relaxed), Ordering::Relaxed);
+      a_clone.store(1, Ordering::Release);
+      c.store(b.load(Ordering::Acquire), Ordering::Release);
+    });
+    thread::spawn(move || {
+      // b_clone.store(1, Ordering::Relaxed);
+      // d.store(a.load(Ordering::Relaxed), Ordering::Relaxed);
+      b_clone.store(1, Ordering::Release);
+      d.store(a.load(Ordering::Acquire), Ordering::Release);
+    });
 
-
-    // broke out of the loop, so we successfully acquired the lock!
-
-    // ... scary data accesses ...
-
-    // ok we're done, release the lock
-    lock.store(false, Ordering::Release);
+    thread::sleep(Duration::from_millis(500));
+    println!("c:{} d:{}", c_clone.load(Ordering::Acquire), d_clone.load(Ordering::Acquire))
+    // println!("c:{} d:{}", c_clone.load(Ordering::Relaxed), d_clone.load(Ordering::Relaxed))
 }

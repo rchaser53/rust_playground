@@ -4,6 +4,7 @@ name = "like_cron"
 version = "0.1.0"
 
 [dependencies]
+crossbeam = "0.3.2"
 futures = "0.1.18"
 hyper = "0.10.13"
 native-tls = "0.1"

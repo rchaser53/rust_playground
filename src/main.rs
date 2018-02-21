@@ -44,23 +44,31 @@ fn nyan(outer: &Outer) -> &Outer {
   return outer;
 }
 
-fn futureA() -> FutureResult<i16, ()> {
-  thread::sleep(Duration::from_millis(1000));
-  println!("{}", "a");
-  future::ok(1)
+fn futureA() -> Box<Fn() -> FutureResult<i16, ()>> {
+  return Box::new(|| {
+    thread::sleep(Duration::from_millis(1200));
+    println!("{}", "a");
+    future::ok(1)
+  });
 }
-
-fn futureB() -> FutureResult<i16, ()> {
-  thread::sleep(Duration::from_millis(1500));
-  println!("{}", "b");
-  future::ok(2)
+fn futureB() -> Box<Fn() -> FutureResult<i16, ()>> {
+  return Box::new(|| {
+    thread::sleep(Duration::from_millis(1500));
+    println!("{}", "b");
+    future::ok(2)
+  });
 }
 
 fn main() {
 
   let a = futureA();
   let b = futureB();
-  let pair = a.join(b);
-  pair.wait();
+  let pair = a().join(b());
+  let aa = pair.then(|x| {
+    println!(222);
+    future::ok::<i16, ()>(1)
+  });
+  aa.wait();
   println!(1);
+
 }

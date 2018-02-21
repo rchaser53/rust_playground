@@ -6,7 +6,7 @@ extern crate crossbeam;
 // #![feature(get_type_id)]
 
 // use core::result;
-// use futures::{Future};
+use futures::{Future, future};
 // use std::cell::RefCell;
 // use std::any::{Any, TypeId};
 use rand::Rng;
@@ -17,6 +17,8 @@ use std::sync::{mpsc, Arc, Condvar, Mutex};
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering, ATOMIC_USIZE_INIT};
 use std::time::Duration;
 use crossbeam::{Scope};
+use futures::future::Map;
+use futures::future::FutureResult;
 
 struct Client {
   hoge: [i32; 3]
@@ -42,11 +44,23 @@ fn nyan(outer: &Outer) -> &Outer {
   return outer;
 }
 
+fn futureA() -> FutureResult<i16, ()> {
+  thread::sleep(Duration::from_millis(1000));
+  println!("{}", "a");
+  future::ok(1)
+}
+
+fn futureB() -> FutureResult<i16, ()> {
+  thread::sleep(Duration::from_millis(1500));
+  println!("{}", "b");
+  future::ok(2)
+}
+
 fn main() {
-  let outer = Outer{
-    client: Arc::new(Mutex::new(Client{
-      hoge: [0, 0, 0]
-    }))
-  };
-  println!("{:?}", nyan(&outer).client.lock().unwrap().hoge);
+
+  let a = futureA();
+  let b = futureB();
+  let pair = a.join(b);
+  pair.wait();
+  println!(1);
 }

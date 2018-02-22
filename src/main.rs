@@ -3,6 +3,7 @@ extern crate futures;
 extern crate rand;
 extern crate crossbeam;
 extern crate futures_cpupool;
+extern crate time;
 
 // #![feature(get_type_id)]
 
@@ -13,12 +14,13 @@ use futures::{executor, Future, select_all, future};
 use rand::Rng;
 // use std::error::Error;
 // use futures::future::{FutureResult, ok};
-use std::{thread, time};
+use std::{thread};
 use std::sync::{mpsc, Arc, Condvar, Mutex};
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering, ATOMIC_USIZE_INIT};
 use std::time::Duration;
 use crossbeam::{Scope};
 use futures::future::{Map, lazy, FutureResult};
+use time::{SteadyTime};
 // use futures::future::FutureResult;
 
 struct Client {
@@ -66,7 +68,7 @@ fn futureB() -> FutureResult<i16, ()> {
 use futures_cpupool::CpuPool;
 
 fn main() {
-
+  let start = SteadyTime::now();
   // let a = futureA();
   // let b = futureB();
   // let pair = a().join(b());
@@ -116,5 +118,6 @@ fn main() {
   // let pair = a.join(b);
   println!(1);
   thread::sleep(Duration::from_millis(1500));
+  println!("{}", SteadyTime::now() - start);
   // println!("{:?}", pair.wait().unwrap());
 }

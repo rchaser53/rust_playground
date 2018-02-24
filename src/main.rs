@@ -21,6 +21,7 @@ use std::time::Duration;
 use crossbeam::{Scope};
 use futures::future::{Map, lazy, FutureResult};
 use time::{SteadyTime};
+use futures_cpupool::{CpuFuture, CpuPool};
 // use futures::future::FutureResult;
 
 struct Client {
@@ -65,7 +66,24 @@ fn futureB() -> FutureResult<i16, ()> {
 //     future::ok(2)
 //   });
 // }
-use futures_cpupool::CpuPool;
+
+fn hoge () -> Box<FnOnce() -> Result<usize, ()>> {
+  Box::new(move || {
+    thread::sleep(Duration::from_millis(1200));
+    println!(2);
+    Ok(2)
+  })
+}
+
+fn fuga (thread_pool: &CpuPool, num: i16) -> CpuFuture<(), ()> {
+  thread_pool.spawn_fn(move || {
+    thread::sleep(Duration::from_millis((num * 300) as u64));
+    println!("{}", num);
+    Ok(())
+  })
+}
+
+// thread_pool.spawn_fn(hoge())
 
 fn main() {
   let start = SteadyTime::now();
@@ -92,20 +110,10 @@ fn main() {
   // }));
   // .wait_future();
   println!(0);
-  let a = thread_pool.spawn_fn(move || -> Result<usize, ()> {
-            thread::sleep(Duration::from_millis(1200));
-            println!(2);
-            Ok(2)
-          });
-  let b = thread_pool.spawn_fn(move || -> Result<usize, ()> {
-            thread::sleep(Duration::from_millis(200));
-            println!(3);
-            Ok(2)
-          });
+  let a = fuga(&thread_pool, 3);
+  let b = fuga(&thread_pool, 2);
 
   let hoge = vec![a, b];
-  // let hoge = vec![futureA(), futureB()];
-  // let one = select_all(hoge);
   let mut one = future::select_all(hoge);
   while let Ok((value, _idx, remaining)) = one.wait() {
       // println!("Future #{} finished", value);

@@ -1,10 +1,11 @@
 // #![feature(duration_extras)]
 extern crate futures;
-extern crate rand;
 extern crate crossbeam;
-extern crate futures_cpupool;
-extern crate time;
+extern crate num_cpus;
+extern crate image;
 
+// extern crate rand;
+// extern crate time;
 // #![feature(get_type_id)]
 
 // use core::result;
@@ -14,15 +15,18 @@ extern crate time;
 // use futures::future::{FutureResult, ok};
 // use futures::future::FutureResult;
 
-use rand::Rng;
+// use rand::Rng;
+// use std::{thread};
+// use std::time::Duration;
+// use crossbeam::{Scope};
+// use time::{SteadyTime};
+// use std::fs::File;
+
 use futures::{executor, Future, select_all, future};
-use std::{thread};
+use futures::future::{Map, lazy, FutureResult};
 use std::sync::{mpsc, Arc, Condvar, Mutex};
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering, ATOMIC_USIZE_INIT};
-use std::time::Duration;
-use crossbeam::{Scope};
-use futures::future::{Map, lazy, FutureResult};
-use time::{SteadyTime};
+use std::cmp;
 
 struct Client {
   hoge: [i32; 3]
@@ -48,6 +52,32 @@ fn nyan(outer: &Outer) -> &Outer {
   return outer;
 }
 
+fn main() {
+    let arr = &[-4, 1, 10, 25];
+    let max = find_max(arr, 0, arr.len());
+    assert_eq!(25, max);
+}
+
+// enum hoge {
+//   nyan(num_cpus::get())
+// }
+
+
+fn find_max(arr: &[i32], start: usize, end: usize) -> i32 {
+    // Perform sequential computation if there are only a few elements.
+    let THRESHOLD: usize = num_cpus::get();
+    if end - start <= THRESHOLD {
+        return *arr.iter().max().unwrap();
+    }
+
+    let mid = start + (end - start) / 2;
+    crossbeam::scope(|scope| {
+        let left = scope.spawn(|| find_max(arr, start, mid));
+        let right = scope.spawn(|| find_max(arr, mid, end));
+
+        cmp::max(left.join(), right.join())
+    })
+}
 // fn futureB() -> Box<Fn() -> FutureResult<i16, ()>> {
 //   return Box::new(|| {
 //     thread::sleep(Duration::from_millis(1500));
@@ -56,25 +86,25 @@ fn nyan(outer: &Outer) -> &Outer {
 //   });
 // }
 
-fn hoge () -> Box<FnOnce() -> Result<usize, ()>> {
-  Box::new(move || {
-    thread::sleep(Duration::from_millis(1200));
-    println!(2);
-    Ok(2)
-  })
-}
+// fn hoge () -> Box<FnOnce() -> Result<usize, ()>> {
+//   Box::new(move || {
+//     thread::sleep(Duration::from_millis(1200));
+//     println!(2);
+//     Ok(2)
+//   })
+// }
 
-#[derive(Default)]
-struct SomeOptions {
-    foo: i32,
-    bar: f32,
-}
+// #[derive(Default)]
+// struct SomeOptions {
+//     foo: i32,
+//     bar: f32,
+// }
 
-fn main() {
-    let options: SomeOptions = Default::default();
+// fn main() {
+//     let options: SomeOptions = Default::default();
 
-    println!("{}", options.foo);
-}
+//     println!("{}", options.foo);
+// }
 
 // let a = executor::spawn(lazy(|| {
 //   thread::sleep(Duration::from_millis(1600));

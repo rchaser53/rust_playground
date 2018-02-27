@@ -27,6 +27,8 @@ use futures::future::{Map, lazy, FutureResult};
 use std::sync::{mpsc, Arc, Condvar, Mutex};
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering, ATOMIC_USIZE_INIT};
 use std::cmp;
+use image::*;
+use std::fs::File;
 
 struct Client {
   hoge: [i32; 3]
@@ -53,10 +55,30 @@ fn nyan(outer: &Outer) -> &Outer {
 }
 
 fn main() {
-    let arr = &[-4, 1, 10, 25];
-    let max = find_max(arr, 0, arr.len());
-    assert_eq!(25, max);
+    // let arr = &[-4, 1, 10, 25];
+    // let max = find_max(arr, 0, arr.len());
+    // assert_eq!(25, max);
+
+    let mut img = image::open("nyan.png").unwrap();
+    let (width, height) = hoge(&mut img);
+    let mut buffer: ImageBuffer<Rgba<u8>, Vec<u8>> = ImageBuffer::new(width, height);
+    for x in 0..(width) {
+        for y in 0..(height) {
+            let px = img.get_pixel(x, y).map(|v| v);
+            buffer.put_pixel(x, y, px);
+        }
+    }
+    let ref mut fout = File::create("hogyahogya.png").unwrap();
+    ImageRgba8(buffer).save(fout, PNG).unwrap();
 }
+
+fn hoge<G>(image: &mut G) -> (u32, u32)
+    where G: GenericImage<Pixel = Rgba<u8>> {
+  image.dimensions()
+}
+
+
+
 
 // enum hoge {
 //   nyan(num_cpus::get())

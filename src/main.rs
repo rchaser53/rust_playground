@@ -78,7 +78,12 @@ fn hoge<G>(image: &mut G) -> (u32, u32)
 }
 
 
-
+use std::{env, io, path};
+// fn get_config_path(hoge: String) -> io::Result<path::PathBuf> {
+fn get_config_path(hoge: String) -> Result<path::PathBuf, io::Error> {
+    let buf_pwd = env::current_dir()?;
+    Ok(buf_pwd.join(hoge))
+}
 
 // enum hoge {
 //   nyan(num_cpus::get())
